@@ -6,7 +6,7 @@ Language: Kotlin
 
 Architecture: MVVM
 
-Stuffs included:
+Stuffs included:</br>
     - Jetpack Compose for UI
     - Room for persistence of date
     - Retrofit2 to fetch data from TMDB Api
