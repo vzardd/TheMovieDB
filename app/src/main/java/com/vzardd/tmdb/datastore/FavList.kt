@@ -1,5 +1,5 @@
 package com.vzardd.tmdb.datastore
 
 data class FavList(
-    var moviesCache: List<MovieCache>? = emptyList()
+    var idList: List<Int> = emptyList()
 )

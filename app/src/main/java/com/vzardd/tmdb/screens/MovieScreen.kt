@@ -1,6 +1,6 @@
 package com.vzardd.tmdb.screens
 
-import android.content.Context
+import android.util.Log
 import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -31,8 +31,6 @@ import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import com.google.accompanist.flowlayout.FlowRow
 import com.vzardd.tmdb.R
-import com.vzardd.tmdb.datastore.FavList
-import com.vzardd.tmdb.datastore.MovieCache
 import com.vzardd.tmdb.datastore.MovieDataStore
 import com.vzardd.tmdb.model.Cast
 import com.vzardd.tmdb.model.Genre
@@ -46,24 +44,34 @@ import com.vzardd.tmdb.util.Constants
 import com.vzardd.tmdb.util.TMDBUtil
 import com.vzardd.tmdb.viewmodel.MovieViewModel
 import kotlinx.coroutines.launch
+import kotlin.properties.Delegates
 
 
 @Composable
 fun MovieScreen(navController: NavHostController, id: Int?, movieViewModel: MovieViewModel) {
+
+    val dataStore = MovieDataStore(LocalContext.current)
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     val favState = remember{
         mutableStateOf(false)
     }
-
     val movieData = movieViewModel.movieDetails
     val creditsData = movieViewModel.movieCredits
     val keywordsData = movieViewModel.movieKeywords
     val recommendationsData = movieViewModel.movieRecommendations
     LaunchedEffect(Unit){
+        coroutineScope.launch {
+            Log.e("TMDB", "Before is present check")
+            favState.value = dataStore.isPresent(id)
+            Log.e("TMDB", "After is present check ${favState.value}")
+        }
         movieViewModel.getMovieDetails(id!!)
         movieViewModel.getMovieCredits(id)
         movieViewModel.getMovieKeywords(id)
         movieViewModel.getMovieRecommendations(id)
     }
+
     TheMovieDBTheme {
         Scaffold(topBar = {
             TopAppBar(backgroundColor = MaterialTheme.colors.primary) {
@@ -89,6 +97,20 @@ fun MovieScreen(navController: NavHostController, id: Int?, movieViewModel: Movi
                         .clickable(
                             indication = null,
                             interactionSource = remember { MutableInteractionSource() }) {
+                            if (favState.value) {
+                                coroutineScope.launch {
+                                    Log.e("Fav","Before Removed")
+                                    dataStore.removeIdFromFav(id?:0, context)
+                                    Log.e("Fav","Removed")
+                                }
+                            } else {
+                                coroutineScope.launch {
+                                    Log.e("Fav","Before Added")
+                                    dataStore.addIdToFav(id?:0, context)
+                                    Log.e("Fav","Added")
+                                }
+                            }
+                            Log.d("FavButton", "clicked")
                             favState.value = !favState.value
                         },painter = painterResource(id = icon), contentDescription = "favourites")
                 }
@@ -165,7 +187,9 @@ fun RecommendationCard(id: Int, backdrop: String, title: String, navController: 
                     Image(modifier = Modifier.fillMaxSize(),painter = painterResource(id = R.drawable.default_poster), contentDescription = "backdrop", contentScale = ContentScale.Crop)
                 }
                 else{
-                    Image(modifier = Modifier.fillMaxSize(),painter = rememberAsyncImagePainter(model = Constants.IMAGE_BASE_URL+backdrop), contentDescription = "backdrop", contentScale = ContentScale.Crop)
+                    Image(modifier = Modifier.fillMaxSize(),painter = rememberAsyncImagePainter(model = Constants.IMAGE_BASE_URL+backdrop, placeholder = painterResource(
+                        id = R.drawable.default_poster
+                    )), contentDescription = "backdrop", contentScale = ContentScale.Crop)
                 }
                 Column(
                     Modifier
@@ -273,7 +297,9 @@ fun ProfileCard(profile_img: String, name: String, character: String) {
             else{
                 Image(modifier = Modifier
                     .height(160.dp)
-                    .fillMaxWidth(),painter = rememberAsyncImagePainter(model = Constants.IMAGE_BASE_URL+profile_img), contentDescription = "cast", contentScale = ContentScale.Crop)
+                    .fillMaxWidth(),painter = rememberAsyncImagePainter(model = Constants.IMAGE_BASE_URL+profile_img, placeholder = painterResource(
+                    id = R.drawable.default_cast
+                )), contentDescription = "cast", contentScale = ContentScale.Crop)
             }
             Text(modifier = Modifier.padding(10.dp),text = name, fontSize = 18.sp, color = MaterialTheme.colors.onBackground, fontWeight = FontWeight.Bold, lineHeight = 25.sp)
             Text(modifier = Modifier.padding(10.dp,0.dp,10.dp,10.dp),text = character, fontSize = 16.sp, color = MaterialTheme.colors.onBackground, lineHeight = 25.sp)
@@ -355,7 +381,9 @@ fun BackDropBox(poster: String? = "", backdrop: String? = ""){
         }
         else{
             Image(
-                painter = rememberAsyncImagePainter(model = Constants.IMAGE_BASE_URL + backdrop),
+                painter = rememberAsyncImagePainter(model = Constants.IMAGE_BASE_URL + backdrop, placeholder = painterResource(
+                    id = R.drawable.default_poster
+                )),
                 contentDescription = "backdrop",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
@@ -391,7 +419,9 @@ fun PosterCard(poster: String? = "") {
             Image(painter = painterResource(id = R.drawable.default_poster), contentDescription = "poster", contentScale = ContentScale.Crop)
         }
         else{
-            Image(painter = rememberAsyncImagePainter(model = Constants.IMAGE_BASE_URL+poster), contentDescription = "poster", contentScale = ContentScale.Crop)
+            Image(painter = rememberAsyncImagePainter(model = Constants.IMAGE_BASE_URL+poster, placeholder = painterResource(
+                id = R.drawable.default_poster
+            )), contentDescription = "poster", contentScale = ContentScale.Crop)
         }
 
     }

@@ -12,6 +12,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -19,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -29,16 +31,13 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import com.vzardd.tmdb.R
-import com.vzardd.tmdb.model.MoviesList
-import com.vzardd.tmdb.model.Result
 import com.vzardd.tmdb.navigation.AppScreens
+import com.vzardd.tmdb.room.MovieDetails
 import com.vzardd.tmdb.ui.theme.TheMovieDBTheme
 import com.vzardd.tmdb.uicomponents.LoadingBox
 import com.vzardd.tmdb.util.Constants
-import com.vzardd.tmdb.util.DataOrException
 import com.vzardd.tmdb.util.TMDBUtil
 import com.vzardd.tmdb.viewmodel.MovieViewModel
-import java.lang.Exception
 
 @Composable
 fun HomeScreen(navController: NavHostController, movieViewModel: MovieViewModel) {
@@ -47,10 +46,10 @@ fun HomeScreen(navController: NavHostController, movieViewModel: MovieViewModel)
             mutableStateOf(false)
         }
 
-        val popularMoviesData = movieViewModel.popularMovies
-        val topRatedMoviesData = movieViewModel.topRatedMovies
-        val nowPlayingMoviesData = movieViewModel.nowPlayingMovies
-        val upcomingMoviesData = movieViewModel.upcomingMovies
+        val popularMovies = movieViewModel.popularMovies.collectAsState().value
+        val topRatedMovies = movieViewModel.topRatedMovies.collectAsState().value
+        val nowPlayingMovies = movieViewModel.nowPlayingMovies.collectAsState().value
+        val upcomingMovies = movieViewModel.upcomingMovies.collectAsState().value
 
         Scaffold(modifier = Modifier
             .fillMaxSize()
@@ -70,23 +69,23 @@ fun HomeScreen(navController: NavHostController, movieViewModel: MovieViewModel)
                 Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colors.background)){
-                if(popularMoviesData.value.e!=null || topRatedMoviesData.value.e!=null || nowPlayingMoviesData.value.e!=null || upcomingMoviesData.value.e !=null){
+                if(popularMovies.isNullOrEmpty() || topRatedMovies.isNullOrEmpty() || nowPlayingMovies.isNullOrEmpty() || upcomingMovies.isNullOrEmpty()){
                     MainContent(
                         navController = navController,
-                        popularMovies = popularMoviesData.value,
-                        topRatedMovies = topRatedMoviesData.value,
-                        nowPlayingMovies = nowPlayingMoviesData.value,
-                        upcomingMovies = upcomingMoviesData.value,
+                        popularMovies = popularMovies,
+                        topRatedMovies = topRatedMovies,
+                        nowPlayingMovies = nowPlayingMovies,
+                        upcomingMovies = upcomingMovies,
                         problem = true
                     )
                 }
                 else{
                     MainContent(
                         navController = navController,
-                        popularMovies = popularMoviesData.value,
-                        topRatedMovies = topRatedMoviesData.value,
-                        nowPlayingMovies = nowPlayingMoviesData.value,
-                        upcomingMovies = upcomingMoviesData.value,
+                        popularMovies = popularMovies,
+                        topRatedMovies = topRatedMovies,
+                        nowPlayingMovies = nowPlayingMovies,
+                        upcomingMovies = upcomingMovies,
                         problem = false
                     )
                 }
@@ -110,29 +109,34 @@ fun NavigationDrawer(value: Boolean, navController: NavController) {
                     .padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(modifier = Modifier
                     .padding(10.dp)
+                    .fillMaxWidth()
                     .clickable {
                         navController.navigate(AppScreens.CategoryScreen.name + "/popular")
-                    },text = "Popular Movies", color = MaterialTheme.colors.onPrimary, fontSize = 22.sp)
+                    },text = "Popular Movies", textAlign =  TextAlign.Center,color = MaterialTheme.colors.onPrimary, fontSize = 22.sp)
                 Text(modifier = Modifier
                     .padding(10.dp)
+                    .fillMaxWidth()
                     .clickable {
                         navController.navigate(AppScreens.CategoryScreen.name + "/top_rated")
-                    },text = "Top Rated Movies", color = MaterialTheme.colors.onPrimary, fontSize = 22.sp)
+                    },text = "Top Rated Movies", textAlign =  TextAlign.Center, color = MaterialTheme.colors.onPrimary, fontSize = 22.sp)
                 Text(modifier = Modifier
                     .padding(10.dp)
+                    .fillMaxWidth()
                     .clickable {
                         navController.navigate(AppScreens.CategoryScreen.name + "/now_playing")
-                    },text = "Now Playing", color = MaterialTheme.colors.onPrimary, fontSize = 22.sp)
+                    },text = "Now Playing", textAlign =  TextAlign.Center, color = MaterialTheme.colors.onPrimary, fontSize = 22.sp)
                 Text(modifier = Modifier
                     .padding(10.dp)
+                    .fillMaxWidth()
                     .clickable {
                         navController.navigate(AppScreens.CategoryScreen.name + "/upcoming")
-                    },text = "Upcoming Movies", color = MaterialTheme.colors.onPrimary, fontSize = 22.sp)
+                    },text = "Upcoming Movies", textAlign =  TextAlign.Center, color = MaterialTheme.colors.onPrimary, fontSize = 22.sp)
                 Text(modifier = Modifier
                     .padding(10.dp)
+                    .fillMaxWidth()
                     .clickable {
                         navController.navigate(AppScreens.FavouritesScreen.name)
-                    },text = "Favourites", color = MaterialTheme.colors.onPrimary, fontSize = 22.sp)
+                    },text = "Favourites",textAlign =  TextAlign.Center, color = MaterialTheme.colors.onPrimary, fontSize = 22.sp)
             }
         }
     }
@@ -140,7 +144,7 @@ fun NavigationDrawer(value: Boolean, navController: NavController) {
 
 //to show popular, now playing, top rated etc..
 @Composable
-fun MainContent(navController: NavController, popularMovies: DataOrException<MoviesList?, Boolean?, Exception>, topRatedMovies: DataOrException<MoviesList?, Boolean?, Exception>, nowPlayingMovies: DataOrException<MoviesList?, Boolean?, Exception>, upcomingMovies: DataOrException<MoviesList?, Boolean?, Exception>, problem: Boolean) {
+fun MainContent(navController: NavController, popularMovies: List<MovieDetails>, topRatedMovies: List<MovieDetails>, nowPlayingMovies: List<MovieDetails>, upcomingMovies: List<MovieDetails>, problem: Boolean) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -149,48 +153,53 @@ fun MainContent(navController: NavController, popularMovies: DataOrException<Mov
     ) {
         WelcomeBox(navController = navController)
         if(problem){
-            Text(modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),text = "Something went wrong :(  Check your internet connection and try again!", color = MaterialTheme.colors.onBackground, textAlign = TextAlign.Center, fontSize = 18.sp)
+            if(TMDBUtil.isNetworkAvailable(LocalContext.current)){
+                LoadingBox()
+            }
+            else{
+                Text(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),text = "Nothing to show :(  Check your internet connection and try again!", color = MaterialTheme.colors.onBackground, textAlign = TextAlign.Center, fontSize = 18.sp)
+            }
         }
         else {
-            if (popularMovies.loading == true) {
+            if (popularMovies.isEmpty()) {
                 LoadingBox()
             } else {
                 CategoryMovies(
                     "What's Popular",
                     navController = navController,
-                    popularMovies.data?.results ?: emptyList()
+                    popularMovies
                 )
                 Divider()
             }
-            if (topRatedMovies.loading == true) {
+            if (topRatedMovies.isEmpty()) {
                 LoadingBox()
             } else {
                 CategoryMovies(
                     "Top Rated",
                     navController = navController,
-                    topRatedMovies.data?.results ?: emptyList()
+                    topRatedMovies
                 )
                 Divider()
             }
-            if (nowPlayingMovies.loading == true) {
+            if (nowPlayingMovies.isEmpty()) {
                 LoadingBox()
             } else {
                 CategoryMovies(
                     "Now Playing",
                     navController = navController,
-                    nowPlayingMovies.data?.results ?: emptyList()
+                    nowPlayingMovies
                 )
                 Divider()
             }
-            if (upcomingMovies.loading == true) {
+            if (upcomingMovies.isEmpty()) {
                 LoadingBox()
             } else {
                 CategoryMovies(
                     "Upcoming Movies",
                     navController = navController,
-                    upcomingMovies.data?.results ?: emptyList()
+                    upcomingMovies
                 )
             }
         }
@@ -228,7 +237,7 @@ fun WelcomeBox(navController: NavController){
 
 // arg - String, List<Result>
 @Composable
-fun CategoryMovies(category: String, navController: NavController, list: List<Result>) {
+fun CategoryMovies(category: String, navController: NavController, list: List<MovieDetails>) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -271,7 +280,7 @@ fun ImageCard(navController: NavController, title: String, poster: String, id: I
                 }
                 else{
                     Image(modifier = Modifier.fillMaxSize(),painter = rememberAsyncImagePainter(
-                        model = Constants.IMAGE_BASE_URL+poster
+                        model = Constants.IMAGE_BASE_URL+poster, placeholder = painterResource(id = R.drawable.default_poster)
                     ), contentDescription = "movie poster", contentScale = ContentScale.Crop)
                 }
                 Box(
@@ -318,25 +327,28 @@ fun SearchCard(navController: NavController){
         Row(
             Modifier
                 .fillMaxWidth()
+                .defaultMinSize(0.dp, 100.dp)
                 .padding(20.dp, 0.dp, 0.dp, 0.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(modifier = Modifier.weight(4f),text = "Search...", color = MaterialTheme.colors.onSecondary, fontSize = 22.sp)
             Card(modifier = Modifier.weight(2f),elevation = 10.dp, shape = CircleShape) {
-                Text(
-                    text = "Search",
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            brush = Brush.linearGradient(
-                                listOf(
-                                    MaterialTheme.colors.secondary,
-                                    MaterialTheme.colors.primaryVariant
-                                )
+                Box(modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        brush = Brush.linearGradient(
+                            listOf(
+                                MaterialTheme.colors.secondary,
+                                MaterialTheme.colors.primaryVariant
                             )
                         )
-                        .padding(20.dp),
-                    color = MaterialTheme.colors.background,
-                    textAlign = TextAlign.Center
-                )
+                    ), Alignment.Center){
+                    Text(
+                        text = "Search",
+                        Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colors.background,
+                        textAlign = TextAlign.Center
+                    )
+                }
+
             }
 
         }

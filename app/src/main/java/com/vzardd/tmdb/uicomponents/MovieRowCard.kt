@@ -41,7 +41,9 @@ fun MovieRowCard(id: Int, poster: String = "", movieTitle: String = "Untitled", 
                     Image(modifier = Modifier.weight(1f),painter = painterResource(id = R.drawable.default_poster), contentDescription = "poster", contentScale = ContentScale.Crop)
                 }
                 else{
-                    Image(modifier = Modifier.weight(1f),painter = rememberAsyncImagePainter(model = Constants.IMAGE_BASE_URL+poster), contentDescription = "poster", contentScale = ContentScale.Crop)
+                    Image(modifier = Modifier.weight(1f),painter = rememberAsyncImagePainter(model = Constants.IMAGE_BASE_URL+poster, placeholder = painterResource(
+                        id = R.drawable.default_poster
+                    )),contentDescription = "poster", contentScale = ContentScale.Crop)
                 }
                 Column(
                     Modifier

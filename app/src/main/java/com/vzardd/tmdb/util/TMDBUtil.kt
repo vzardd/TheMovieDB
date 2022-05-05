@@ -1,19 +1,16 @@
 package com.vzardd.tmdb.util
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Build
-import androidx.annotation.RequiresApi
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.capitalize
-import androidx.compose.ui.text.toLowerCase
 import com.google.gson.Gson
 import com.vzardd.tmdb.datastore.FavList
-import com.vzardd.tmdb.datastore.MovieCache
 import com.vzardd.tmdb.model.Genre
 import com.vzardd.tmdb.model.SpokenLanguage
 import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeFormatterBuilder
 
 object TMDBUtil {
     fun dateFormatter(str: String): String{
@@ -75,9 +72,9 @@ object TMDBUtil {
         return "-"
     }
 
-    fun jsonToObject(json: String): FavList{
+    fun jsonToObject(json: String): FavList {
         if(json.isEmpty()){
-            return FavList()
+            return FavList(emptyList())
         }
         return Gson().fromJson(json,FavList::class.java)
     }
@@ -85,4 +82,29 @@ object TMDBUtil {
     fun objectToJson(obj: FavList): String{
         return Gson().toJson(obj)
     }
+
+    fun isNetworkAvailable(context: Context?): Boolean {
+        if (context == null) return false
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val capabilities =
+                connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
+            if (capabilities != null) {
+                when {
+                    capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> {
+                        return true
+                    }
+                    capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> {
+                        return true
+                    }
+                    capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> {
+                        return true
+                    }
+                }
+            }
+        }
+        return false
+    }
+
+
 }
