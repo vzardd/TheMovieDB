@@ -6,8 +6,7 @@ import android.net.NetworkCapabilities
 import android.os.Build
 import com.google.gson.Gson
 import com.vzardd.tmdb.datastore.FavList
-import com.vzardd.tmdb.model.Genre
-import com.vzardd.tmdb.model.SpokenLanguage
+import com.vzardd.tmdb.model.*
 import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -73,13 +72,57 @@ object TMDBUtil {
     }
 
     fun jsonToObject(json: String): FavList {
-        if(json.isEmpty()){
+        if((json==null) or json.isEmpty()){
             return FavList(emptyList())
         }
         return Gson().fromJson(json,FavList::class.java)
     }
 
     fun objectToJson(obj: FavList): String{
+        return Gson().toJson(obj)
+    }
+
+    fun jsonToMovieObject(json: String): FullMovieDetails {
+        if((json==null) or json.isEmpty()){
+            return FullMovieDetails()
+        }
+        return Gson().fromJson(json,FullMovieDetails::class.java)
+    }
+
+    fun movieObjectToJson(obj: FullMovieDetails): String{
+        return Gson().toJson(obj)
+    }
+
+    fun jsonToCreditsObject(json: String): Credits {
+        if((json==null) or json.isEmpty()){
+            return Credits()
+        }
+        return Gson().fromJson(json,Credits::class.java)
+    }
+
+    fun creditsObjectToJson(obj: Credits): String{
+        return Gson().toJson(obj)
+    }
+
+    fun jsonToKeywordsListObject(json: String): KeywordsList {
+        if((json==null) or json.isEmpty()){
+            return KeywordsList()
+        }
+        return Gson().fromJson(json,KeywordsList::class.java)
+    }
+
+    fun keywordsListObjectToJson(obj: KeywordsList): String{
+        return Gson().toJson(obj)
+    }
+
+    fun jsonToRecommendationsObject(json: String): MoviesList {
+        if((json==null) or json.isEmpty()){
+            return MoviesList()
+        }
+        return Gson().fromJson(json,MoviesList::class.java)
+    }
+
+    fun recommendationsObjectToJson(obj: MoviesList): String{
         return Gson().toJson(obj)
     }
 

@@ -11,6 +11,7 @@ import com.vzardd.tmdb.model.FullMovieDetails
 import com.vzardd.tmdb.model.KeywordsList
 import com.vzardd.tmdb.model.MoviesList
 import com.vzardd.tmdb.network.ApiService
+import com.vzardd.tmdb.room.FullMovieCache
 import com.vzardd.tmdb.room.MovieDao
 import com.vzardd.tmdb.room.MovieDatabase
 import com.vzardd.tmdb.room.MovieDetails
@@ -165,6 +166,11 @@ class MovieRepo @Inject constructor(private val apiService: ApiService, private 
         return t4doe
     }
 
+    suspend fun clearMovieCacheForId(id: Int){
+        movieDao.clearMovieCacheForId(id)
+        Log.e("MovieRepo","DB Cleared")
+    }
+
     suspend fun clearMovieDB(){
         movieDao.clearMovieDB()
     }
@@ -187,6 +193,27 @@ class MovieRepo @Inject constructor(private val apiService: ApiService, private 
 
     suspend fun addMovieToRoom(movieDetails: MovieDetails): Long{
         return movieDao.addMovie(movieDetails)
+    }
+
+    suspend fun addFullMovieToRoom(fullMovieCache: FullMovieCache){
+        movieDao.addFullMovieCache(fullMovieCache)
+        Log.e("MovieRepo", "Movie Added to Room")
+    }
+
+    fun getMovieCacheFromRoom(id: Int): Flow<String>{
+        return movieDao.getMovieCacheFromRoom(id).flowOn(Dispatchers.IO).conflate()
+    }
+
+    fun getKeywordsCacheFromRoom(id: Int): Flow<String>{
+        return movieDao.getKeywordsCacheFromRoom(id).flowOn(Dispatchers.IO).conflate()
+    }
+
+    fun getCreditsCacheFromRoom(id: Int): Flow<String>{
+        return movieDao.getCreditsCacheFromRoom(id).flowOn(Dispatchers.IO).conflate()
+    }
+
+    fun getRecommendationsCacheFromRoom(id: Int): Flow<String>{
+        return movieDao.getRecommendationsCacheFromRoom(id).flowOn(Dispatchers.IO).conflate()
     }
 
     suspend fun updatePopular(id: Int){

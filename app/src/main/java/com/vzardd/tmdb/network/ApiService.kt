@@ -78,12 +78,5 @@ interface ApiService {
         api_key: String = Constants.API_KEY
     ) : MoviesList
 
-//    @GET("movie/{category}")
-//    suspend fun getMoviesByCategory(
-//        @Path("category")
-//        category: String,
-//        @Query("api_key")
-//        api_key: String = Constants.API_KEY
-//    ) : MoviesList
 
 }

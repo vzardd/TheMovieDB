@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vzardd.tmdb.model.*
 import com.vzardd.tmdb.repository.MovieRepo
+import com.vzardd.tmdb.room.FullMovieCache
 import com.vzardd.tmdb.room.MovieDetails
 import com.vzardd.tmdb.util.DataOrException
 import com.vzardd.tmdb.util.TMDBUtil
@@ -25,10 +26,18 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MovieViewModel @Inject constructor(private val movieRepo: MovieRepo): ViewModel() {
-    val movieDetails = mutableStateOf(DataOrException<FullMovieDetails?,Boolean?,Exception>())
-    val movieCredits = mutableStateOf(DataOrException<Credits?,Boolean?,Exception>())
-    val movieKeywords = mutableStateOf(DataOrException<KeywordsList?,Boolean?,Exception>())
-    val movieRecommendations = mutableStateOf(DataOrException<MoviesList?,Boolean?,Exception>())
+
+    private val _movieDetails = MutableStateFlow(FullMovieDetails())
+    val movieDetails = _movieDetails.asStateFlow()
+
+    private val _movieCredits = MutableStateFlow(Credits())
+    val movieCredits = _movieCredits.asStateFlow()
+
+    private val _movieKeywords = MutableStateFlow(KeywordsList())
+    val movieKeywords = _movieKeywords.asStateFlow()
+
+    private val _movieRecommendations = MutableStateFlow(MoviesList())
+    val movieRecommendations = _movieRecommendations.asStateFlow()
     //category wise
 
     private val _popularMovies = MutableStateFlow<List<MovieDetails>>(emptyList())
@@ -62,6 +71,13 @@ class MovieViewModel @Inject constructor(private val movieRepo: MovieRepo): View
         getNowPlayingMoviesFromRoom()
         getUpcomingMoviesFromRoom()
 
+    }
+
+    fun reset(){
+        _movieDetails.value = FullMovieDetails()
+        _movieCredits.value = Credits()
+        _movieRecommendations.value = MoviesList()
+        _movieKeywords.value = KeywordsList()
     }
 
     fun getPopularMoviesFromRoom(){
@@ -108,107 +124,73 @@ class MovieViewModel @Inject constructor(private val movieRepo: MovieRepo): View
         }
     }
 
-    fun getMovieDetails(id: Int){
-        Log.d("MovieViewModel","called")
-        movieDetails.value = DataOrException(FullMovieDetails(),true,null)
+    fun storeFullMovieDetailsToRoom(id: Int){
         viewModelScope.launch {
-            Log.d("SearchViewModel", "saved")
-            val doe = DataOrException<FullMovieDetails?,Boolean?,Exception>(null,true,null)
-            try{
-                doe.e = null
-                movieDetails.value.loading = true
-                doe.loading = true;
-                val res = movieRepo.getMovieDetails(id)
-                doe.data = res.data
-                doe.e = res.e
-                if(doe.data != null){
-                    doe.loading = false
-                }
-            }catch (e:Exception){
-                doe.e = e
-                Log.d("SearchViewModel","error: $e")
-            }
-            doe.loading = false
-            movieDetails.value = doe
+            movieRepo.clearMovieCacheForId(id)
+            Log.e("MovieViewModel","inside storing to room")
+
+            val res1 = movieRepo.getMovieDetails(id)
+            val movieDetails = TMDBUtil.movieObjectToJson(res1.data?: FullMovieDetails())
+
+            val res2 = movieRepo.getCredits(id)
+            val movieCredits = TMDBUtil.creditsObjectToJson(res2.data?: Credits())
+
+            val res3 = movieRepo.getKeywords(id)
+            val keywordsList = TMDBUtil.keywordsListObjectToJson(res3.data?:KeywordsList())
+
+            val res4 = movieRepo.getRecommendations(id)
+            val recommendationList = TMDBUtil.recommendationsObjectToJson(res4.data?:MoviesList())
+
+            val fullMovieCache = FullMovieCache(id,movieDetails,movieCredits,keywordsList,recommendationList)
+            Log.e("MovieViewModel","ending storing to room")
+            movieRepo.addFullMovieToRoom(fullMovieCache)
         }
-        Log.d("SearchViewModel","completed")
     }
 
-    fun getMovieCredits(id: Int){
-        Log.d("MovieViewModel","called")
-        movieCredits.value = DataOrException(Credits(),true,null)
-        viewModelScope.launch {
-            Log.d("SearchViewModel", "saved")
-            val doe = DataOrException<Credits?,Boolean?,Exception>(null,true,null)
-            try{
-                doe.e = null
-                movieCredits.value.loading = true
-                doe.loading = true;
-                val res = movieRepo.getCredits(id)
-                doe.data = res.data
-                doe.e = res.e
-                if(doe.data != null){
-                    doe.loading = false
-                }
-            }catch (e:Exception){
-                doe.e = e
-                Log.d("SearchViewModel","error: $e")
-            }
-            doe.loading = false
-            movieCredits.value = doe
-        }
-        Log.d("SearchViewModel","completed")
+    fun getFullMovieDetailsFromRoom(id: Int){
+        getMovieDetails(id)
+        getMovieCredits(id)
+        getMovieKeywords(id)
+        getMovieRecommendations(id)
     }
 
-    fun getMovieKeywords(id: Int){
-        Log.d("MovieViewModel","called")
-        movieKeywords.value = DataOrException(KeywordsList(),true,null)
-        viewModelScope.launch {
-            Log.d("SearchViewModel", "saved")
-            val doe = DataOrException<KeywordsList?,Boolean?,Exception>(null,true,null)
-            try{
-                doe.e = null
-                movieKeywords.value.loading = true
-                doe.loading = true;
-                val res = movieRepo.getKeywords(id)
-                doe.data = res.data
-                doe.e = res.e
-                if(doe.data != null){
-                    doe.loading = false
+    private fun getMovieDetails(id: Int){
+        viewModelScope.launch(Dispatchers.IO) {
+            movieRepo.getMovieCacheFromRoom(id).distinctUntilChanged()
+                .collect{
+                    if(it!=null)
+                    _movieDetails.value = TMDBUtil.jsonToMovieObject(it)
                 }
-            }catch (e:Exception){
-                doe.e = e
-                Log.d("SearchViewModel","error: $e")
-            }
-            doe.loading = false
-            movieKeywords.value = doe
         }
-        Log.d("SearchViewModel","completed")
     }
-    fun getMovieRecommendations(id: Int){
-        Log.d("MovieViewModel","called")
-        movieRecommendations.value = DataOrException(MoviesList(),true,null)
-        viewModelScope.launch {
-            Log.d("SearchViewModel", "saved")
-            val doe = DataOrException<MoviesList?,Boolean?,Exception>(null,true,null)
-            try{
-                doe.e = null
-                movieRecommendations.value.loading = true
-                doe.loading = true
-                val res = movieRepo.getRecommendations(id)
-                doe.data = res.data
-                doe.e = res.e
-                if(doe.data != null){
-                    doe.loading = false
+
+    private fun getMovieCredits(id: Int){
+        viewModelScope.launch(Dispatchers.IO) {
+            movieRepo.getCreditsCacheFromRoom(id).distinctUntilChanged()
+                .collect{
+                    if(it!=null)
+                    _movieCredits.value = TMDBUtil.jsonToCreditsObject(it)
                 }
-            }catch (e:Exception){
-                doe.e = e
-                Log.d("SearchViewModel","error: $e")
-            }
-            doe.loading = false
-            movieRecommendations.value = doe
         }
-        Log.d("SearchViewModel","completed")
+    }
+
+    private fun getMovieKeywords(id: Int){
+        viewModelScope.launch(Dispatchers.IO) {
+            movieRepo.getKeywordsCacheFromRoom(id).distinctUntilChanged()
+                .collect{
+                    if(it!=null)
+                    _movieKeywords.value = TMDBUtil.jsonToKeywordsListObject(it)
+                }
+        }
+    }
+    private fun getMovieRecommendations(id: Int){
+        viewModelScope.launch(Dispatchers.IO) {
+            movieRepo.getRecommendationsCacheFromRoom(id).distinctUntilChanged()
+                .collect{
+                    if(it!=null)
+                    _movieRecommendations.value = TMDBUtil.jsonToRecommendationsObject(it)
+                }
+        }
     }
 
     //category wise
@@ -324,13 +306,11 @@ class MovieViewModel @Inject constructor(private val movieRepo: MovieRepo): View
         }
     }
 
-    fun getFavouritesByIds(idList: List<Int>) : List<MovieDetails>{
+    suspend fun getFavouritesByIds(idList: List<Int>) : List<MovieDetails>{
         val list = mutableListOf<MovieDetails>()
-        viewModelScope.launch {
             for(id in idList){
                 list.add(movieRepo.getMovieById(id))
             }
-        }
         return list.toList()
     }
 }

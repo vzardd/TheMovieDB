@@ -1,6 +1,7 @@
 package com.vzardd.tmdb.screens
 
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -43,8 +44,11 @@ fun FavouritesScreen(navController: NavController, movieViewModel: MovieViewMode
     }
     LaunchedEffect(Unit){
         val movieListIds = movieDatastore.getFavListIds()
+        Log.e("In favourites","Launched effect over ${movieListIds.size}")
         movieList.value = movieViewModel.getFavouritesByIds(movieListIds)
+
     }
+    Log.e("fav","okk ${movieList.value.size}")
     TheMovieDBTheme {
         Scaffold(
             Modifier

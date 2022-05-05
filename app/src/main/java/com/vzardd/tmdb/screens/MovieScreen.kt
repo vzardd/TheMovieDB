@@ -32,11 +32,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.google.accompanist.flowlayout.FlowRow
 import com.vzardd.tmdb.R
 import com.vzardd.tmdb.datastore.MovieDataStore
-import com.vzardd.tmdb.model.Cast
-import com.vzardd.tmdb.model.Genre
-import com.vzardd.tmdb.model.Keyword
-import com.vzardd.tmdb.model.Result
-import com.vzardd.tmdb.model.SpokenLanguage
+import com.vzardd.tmdb.model.*
 import com.vzardd.tmdb.navigation.AppScreens
 import com.vzardd.tmdb.ui.theme.TheMovieDBTheme
 import com.vzardd.tmdb.uicomponents.LoadingBox
@@ -56,20 +52,19 @@ fun MovieScreen(navController: NavHostController, id: Int?, movieViewModel: Movi
     val favState = remember{
         mutableStateOf(false)
     }
-    val movieData = movieViewModel.movieDetails
-    val creditsData = movieViewModel.movieCredits
-    val keywordsData = movieViewModel.movieKeywords
-    val recommendationsData = movieViewModel.movieRecommendations
+    val movieData = movieViewModel.movieDetails.collectAsState()
+    val creditsData = movieViewModel.movieCredits.collectAsState()
+    val keywordsData = movieViewModel.movieKeywords.collectAsState()
+    val recommendationsData = movieViewModel.movieRecommendations.collectAsState()
     LaunchedEffect(Unit){
         coroutineScope.launch {
-            Log.e("TMDB", "Before is present check")
             favState.value = dataStore.isPresent(id)
-            Log.e("TMDB", "After is present check ${favState.value}")
         }
-        movieViewModel.getMovieDetails(id!!)
-        movieViewModel.getMovieCredits(id)
-        movieViewModel.getMovieKeywords(id)
-        movieViewModel.getMovieRecommendations(id)
+
+        if(TMDBUtil.isNetworkAvailable(context)){
+            movieViewModel.storeFullMovieDetailsToRoom(id!!)
+        }
+        movieViewModel.getFullMovieDetailsFromRoom(id!!)
     }
 
     TheMovieDBTheme {
@@ -81,6 +76,7 @@ fun MovieScreen(navController: NavHostController, id: Int?, movieViewModel: Movi
                         .clickable(
                             indication = null,
                             interactionSource = remember { MutableInteractionSource() }) {
+                            movieViewModel.reset()
                             navController.popBackStack()
                         },imageVector = Icons.Default.ArrowBack, contentDescription = "back", tint = MaterialTheme.colors.onSecondary)
                     Image(modifier = Modifier.size(40.dp),painter = painterResource(id = R.drawable.moviedb_logo), contentDescription = "logo")
@@ -99,15 +95,15 @@ fun MovieScreen(navController: NavHostController, id: Int?, movieViewModel: Movi
                             interactionSource = remember { MutableInteractionSource() }) {
                             if (favState.value) {
                                 coroutineScope.launch {
-                                    Log.e("Fav","Before Removed")
-                                    dataStore.removeIdFromFav(id?:0, context)
-                                    Log.e("Fav","Removed")
+                                    Log.e("Fav", "Before Removed")
+                                    dataStore.removeIdFromFav(id ?: 0, context)
+                                    Log.e("Fav", "Removed")
                                 }
                             } else {
                                 coroutineScope.launch {
-                                    Log.e("Fav","Before Added")
-                                    dataStore.addIdToFav(id?:0, context)
-                                    Log.e("Fav","Added")
+                                    Log.e("Fav", "Before Added")
+                                    dataStore.addIdToFav(id ?: 0, context)
+                                    Log.e("Fav", "Added")
                                 }
                             }
                             Log.d("FavButton", "clicked")
@@ -118,39 +114,39 @@ fun MovieScreen(navController: NavHostController, id: Int?, movieViewModel: Movi
             }
         }) {
 
-            if(movieData.value.loading == true){
+            if((movieData.value.id == -1) and TMDBUtil.isNetworkAvailable(context)){
                 LoadingBox()
             }
-            else if(movieData.value.e!=null){
+            else if((movieData.value.id == -1) and !TMDBUtil.isNetworkAvailable(context)){
                 Text(modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp),text = "Something went wrong :(  Check your internet connection and try again!", color = MaterialTheme.colors.onBackground, textAlign = TextAlign.Center, fontSize = 18.sp)
+                    .padding(20.dp),text = "Nothing to show :(  Check your internet connection and try again!", color = MaterialTheme.colors.onBackground, textAlign = TextAlign.Center, fontSize = 18.sp)
             }
             else{
                 Column(
                     Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())) {
-                    BackDropBox(poster = movieData.value.data?.poster_path, backdrop = movieData.value.data?.backdrop_path)
+                    BackDropBox(poster = movieData.value.poster_path, backdrop = movieData.value.backdrop_path)
                     InfoBox(
-                        movieData.value.data?.title?:"Untitled",
-                        movieData.value.data?.vote_average?: 0.0,
-                        movieData.value.data?.release_date?:" ",
-                        movieData.value.data?.runtime?: 0,
-                        movieData.value.data?.genres?: emptyList(),
-                        movieData.value.data?.tagline?:" ",
-                        movieData.value.data?.overview?: "-"
+                        movieData.value.title?:"Untitled",
+                        movieData.value.vote_average?: 0.0,
+                        movieData.value.release_date?:" ",
+                        movieData.value.runtime?: 0,
+                        movieData.value.genres?: emptyList(),
+                        movieData.value.tagline?:" ",
+                        movieData.value.overview?: "-"
                     )
-                    CastsBox(creditsData.value.data?.cast?: emptyList())
+                    CastsBox(creditsData.value.cast?: emptyList())
                     DetailsBox(
-                        movieData.value.data?.status?:"Unknown",
-                        movieData.value.data?.original_language?:"English",
-                        movieData.value.data?.budget?:0,
-                        movieData.value.data?.revenue?:0,
-                        movieData.value.data?.spoken_languages?: emptyList(),
-                        keywordsData.value.data?.keywords?: emptyList()
+                        movieData.value.status?:"Unknown",
+                        movieData.value.original_language?:"English",
+                        movieData.value.budget?:0,
+                        movieData.value.revenue?:0,
+                        movieData.value.spoken_languages?: emptyList(),
+                        keywordsData.value.keywords?: emptyList()
                     )
-                    RecommendationBox(recommendationsData.value.data?.results?: emptyList(), navController)
+                    RecommendationBox(recommendationsData.value.results?: emptyList(), navController)
                 }
             }
         }
@@ -160,7 +156,7 @@ fun MovieScreen(navController: NavHostController, id: Int?, movieViewModel: Movi
 
 @Composable
 fun RecommendationBox(list: List<Result>, navController: NavController) {
-    if(list!=null && list.isNotEmpty()){
+    if(list.isNotEmpty()){
         Text( modifier = Modifier.padding(20.dp), text = "You might also like,", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colors.onBackground)
         LazyRow(
             Modifier
@@ -280,6 +276,9 @@ fun CastsBox(list: List<Cast>) {
             }
         }
         Divider()
+    }
+    else{
+        LoadingBox()
     }
 }
 
