@@ -25,6 +25,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -206,12 +207,15 @@ fun MainContent(navController: NavController, popularMovies: List<MovieDetails>,
     }
 }
 
+
 @Composable
 fun WelcomeBox(navController: NavController){
     Box(
         Modifier
             .fillMaxWidth()
-            .aspectRatio(1.4f)){
+            .height(350.dp)
+            //.aspectRatio(1.4f)
+    ){
         Image(painter = painterResource(id = R.drawable.homepage), contentDescription = "Home page", contentScale = ContentScale.Crop)
         Column(
             Modifier
@@ -321,13 +325,14 @@ fun SearchCard(navController: NavController){
 
     Card(modifier = Modifier
         .fillMaxWidth()
+        .height(80.dp)
         .clickable {
             navController.navigate(AppScreens.SearchScreen.name)
         }, elevation = 10.dp, shape = CircleShape, backgroundColor = MaterialTheme.colors.background) {
         Row(
             Modifier
                 .fillMaxWidth()
-                .defaultMinSize(0.dp, 100.dp)
+                //.defaultMinSize(0.dp, 100.dp)
                 .padding(20.dp, 0.dp, 0.dp, 0.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(modifier = Modifier.weight(4f),text = "Search...", color = MaterialTheme.colors.onSecondary, fontSize = 22.sp)
             Card(modifier = Modifier.weight(2f),elevation = 10.dp, shape = CircleShape) {
