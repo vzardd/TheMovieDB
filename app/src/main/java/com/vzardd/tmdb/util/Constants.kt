@@ -1,7 +1,7 @@
 package com.vzardd.tmdb.util
 
 object Constants {
-    const val API_KEY = "251d1bb4f29db6dfde5923cf5117b0c2"
+    const val API_KEY = "YOUR_API_KEY_HERE"
     const val BASE_URL = "https://api.themoviedb.org/3/"
     const val IMAGE_BASE_URL = "https://image.tmdb.org/t/p/original"
     //search eg
